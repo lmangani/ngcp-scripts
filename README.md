@@ -1,4 +1,4 @@
 ngcp-scripts
 ============
 
-NGCP Related Scripts
+Scripts for NGCP CE/PRO (https://www.sipwise.com)
