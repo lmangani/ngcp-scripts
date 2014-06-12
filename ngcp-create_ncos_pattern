@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+use strict;
+
+use Getopt::Std;
+use Sipwise::Provisioning::Billing;
+use Sipwise::Provisioning::Config;
+
+my %CONFIG = (admin => 'cmd');
+
+my $config = Sipwise::Provisioning::Config->new()->get_config();
+
+unless ($CONFIG{password} = $config->{acl}->{$CONFIG{admin}}->{password}) {
+  die "Error: No provisioning password found for user $CONFIG{admin}\n";
+}
+
+my %BILLING = (
+                billing_profile => 'default',
+# not needed, but may be set if desired
+#                product         => 'handle',
+              );
+
+sub main;
+sub usage;
+sub call_prov;
+
+my %opts;
+getopts('i:d:p:x:s:', \%opts);
+
+die usage() unless defined $opts{i} and defined $opts{d} and defined $opts{p};
+
+my $bprov = Sipwise::Provisioning::Billing->new();
+
+main;
+
+sub main {
+
+    # create pattern
+    my $pattern    = [{ description => $opts{d},
+                       pattern   => $opts{p},
+                     }];
+
+    if(defined $opts{i}) {
+        call_prov( 'set_ncos_pattern_list',
+                   {
+                     level         => $opts{i},
+                     patterns => $pattern,
+                   }
+                 );
+        print "Added Pattern to NCOS Level $opts{i}.\n";
+    }
+
+    exit;
+}
+
+
+sub call_prov {
+    #   scalar,    hash-ref
+    my ($function, $parameter) = @_;
+    my $result;
+
+    eval {
+        $result = $bprov->handle_request( $function,
+                                          {
+                                            authentication => {
+                                                                type     => 'system',
+                                                                username => $CONFIG{admin},
+                                                                password => $CONFIG{password},
+                                                              },
+                                            parameters => $parameter,
+                                        });
+    };
+
+    if($@) {
+        if(ref $@ eq 'SOAP::Fault') {
+            die "Billing\::$function failed: ". $@->faultstring ."\n";
+        } else {
+            die "Billing\::$function failed: $@\n";
+        }
+    }
+
+    return $result;
+}
+
+sub usage {
+    die "Usage:\n$0 [-i NCOS List] -u <description> -p <pattern>\n\n".
+        "e.g.: $0 -i BLOCKLIST -p ^0099 -d test\n\n".
+        "Options:\n".
+        "  -i <ncos_level>   NCOS Level name\n".
+        "  -p <pattern>      New Pattern (ie: ^0099)\n".
+        "  -d <description>  Description of new Pattern\n".
+        "";
+}
