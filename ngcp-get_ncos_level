@@ -1,0 +1,110 @@
+#!/usr/bin/perl
+use strict;
+
+use Data::Dumper;
+use Getopt::Std;
+use Sipwise::Provisioning::Billing;
+use Sipwise::Provisioning::Config;
+
+my %CONFIG = (admin => 'cmd');
+
+my $config = Sipwise::Provisioning::Config->new()->get_config();
+
+unless ($CONFIG{password} = $config->{acl}->{$CONFIG{admin}}->{password}) {
+  die "Error: No provisioning password found for user $CONFIG{admin}\n";
+}
+
+sub main;
+sub usage;
+sub call_prov;
+
+my %opts;
+getopts('i:p:c:', \%opts);
+
+die usage() unless (defined $opts{i} and !defined $opts{p})
+                or (defined $opts{p} and !defined $opts{i});
+
+my $bprov = Sipwise::Provisioning::Billing->new();
+
+my $ncos = defined $opts{i} ? $opts{i} : $opts{p}; 
+
+main;
+
+sub main {
+    my $return = defined $opts{i}
+                 ? call_prov('get_ncos_level', { level => $opts{i} })
+                 : call_prov('get_ncos_pattern_list', {
+                                                                 level => $opts{p}
+                                                               });
+
+    # use no indentation/linebreaks, for syslog logging
+    $Data::Dumper::Indent = 1;
+    # don't print useless variable names
+    $Data::Dumper::Terse = 1;
+    # sort hash keys, so parameters always have the same order
+    #$Data::Dumper::Sortkeys = 1;
+    $Data::Dumper::Sortkeys = sub { [reverse sort keys %{$_[0]}] };
+
+    if (defined $opts{c}) {
+	   print "NCOS Level dumped to CSV (".$ncos.".csv)\n"; 
+    } else {
+	   print "NCOS Level information:\n", Dumper $return;
+    }
+    exit;
+}
+
+
+sub call_prov {
+    #   scalar,    scalar,    hash-ref
+    my ($function, $parameter) = @_;
+    my $result;
+
+    eval {
+        $result = $bprov->handle_request( $function,
+                                          {
+                                            authentication => {
+                                                                type     => 'system',
+                                                                username => $CONFIG{admin},
+                                                                password => $CONFIG{password},
+                                                              },
+                                            parameters => $parameter,
+                                        });
+    };
+
+    if($@) {
+        if(ref $@ eq 'SOAP::Fault') {
+            die "Billing\::$function failed: ". $@->faultstring;
+        } else {
+            die "Billing\::$function failed: $@";
+        }
+    }
+
+    if (defined $opts{c}) {
+	   return write_csv($result);
+    }
+
+    return $result;
+
+}
+
+sub write_csv {
+
+  my ($array_ref) = @_;
+  open my $fh, '>', $ncos.'.csv' or die $!;
+
+  for my $row (@$array_ref) {
+    #print $fh join(',', map { $_, $row->{$_} } keys %$row), "\n";
+    print $fh join(',', map { $row->{$_} } keys %$row), "\n";
+    #print join(',', map { $_, $row->{$_} } sort keys %$row), "\n";
+  }
+
+}
+
+sub usage {
+    die "Usage:\n  $0 -i <ncos_level_name>\nor:\n  $0 -p <ncos_level_name>\n".
+        "\ne.g.: $0 -i BLOCKLIST\n\n".
+        "Options:\n".
+        "  -i <level_name>   Display NCOS List\n".
+        "  -p <level_name>   Display Patterns in NCOS List\n".
+        "  	    -c <1>       Save NCOS to csv file in local directory\n";
+}
