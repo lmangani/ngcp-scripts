@@ -56,9 +56,15 @@ while (my $line = <$data>) {
   chomp $line;
  
   my @fields = split "," , $line;
+  #strip non numeric
+  $fields[0] =~ s/\D//g;
+  #prefix/postfix for regex
+  my $pfx = '^'.$fields[0].'.*';
+  #pack the pattern
   my $pattern    = [{ description => $fields[1],
-                       pattern   => $fields[0],
+                       pattern   => $pfx,
                      }];
+
 
     if(defined $fields[0]) {
         call_prov( 'set_ncos_pattern_list',
@@ -67,7 +73,7 @@ while (my $line = <$data>) {
                      patterns => $pattern,
                    }
                  );
-        print "Added Pattern [$fields[0]] ($fields[1]) to NCOS Level: $opts{i}.\n";
+        print "Added Pattern [$pfx] ($fields[1]) to NCOS Level: $opts{i}.\n";
     }
 
 
