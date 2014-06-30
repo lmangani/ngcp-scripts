@@ -10,13 +10,21 @@ heport=9069
 hepid=199
 heptype=35
 
-# Specify NGCP Log file to monitor (ie: /var/log/ngcp/kamailio-lb.log)
+# Specify NGCP Log file to monitor (ie: /var/log/ngcp/kamailio-lb.log) or all logs NGCP logs
 if ! [ $1 ]; then
-	echo "USAGE: $0 {/var/log/ngcp/application.log}";
+	echo "Missing Argument! USAGE EXAMPLE:"; echo;
+	echo "SINGLE LOG:    $0 /path/to/application.log";
+	echo "ALL LOGS  :    $0 --all";
 	exit;
 fi
 
-log=$1
+if [ $1 = "--all" ] || [ $1 = "-a" ]; then
+	log=/var/log/ngcp/*.log
+	all=1
+else 
+	log=$1
+fi
+
 
 # Verify hepipe is available
 if ! [ $(which hepipe) ]; then
