@@ -26,25 +26,27 @@ else
 fi
 
 
-# Verify hepipe is available
+#test for hepipe
 if ! [ $(which hepipe) ]; then
 	echo "ERROR: Please install HEPipe (https://github.com/sipcapture/hepipe)";
 	exit;
 fi
 
-# Verify existence of the log file
-if [ -f $log ]
-then
+#test for existence of the log file
+if [ $all = 1 ] || [ -f $log ]; then
 
-  # Read through the file looking for the Call-ID (ID=)
+  #read through the file looking for the Call ID=
   while read line
   do
     echo $line | grep -q ID=
     if [ $? == 0 ]; then
     callid=`echo $line  | grep --line-buffered "ID=" | sed -u -e "s/.*ID=//" | sed -u -e "s/\"//g"`
-    ts=$(date +%s)
+    logdate=`echo $line | awk '{print $1, $2, $3}'`
+    ts=$(date --date="$logdate" +%s)
+    tsu=$(date --date="$logdate" +%4N)
     #### timesec;timeusec;correlationid;source_ip;source_port;destination_ip;destinaton_port;payload in json
-    echo "${ts};0000;${callid};127.0.0.1;5060;10.0.0.1;5060;{\"log\": \"${line}\"}" | hepipe  -s $hepserver -p $heport -i $hepid -t $heptype | grep Correlation
+    #echo "${ts};${tsu};${callid};127.0.0.1;5060;10.0.0.1;5060;{\"log\": \"${line}\"}"
+    echo "${ts};${tsu};${callid};127.0.0.1;5060;10.0.0.1;5060;{\"log\": \"${line}\"}" | hepipe  -s $hepserver -p $heport -i $hepid -t $heptype 
     fi
   done < <(tail -f $log)
 
