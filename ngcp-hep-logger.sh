@@ -8,7 +8,8 @@
 hepserver=127.0.0.1
 heport=9069
 hepid=199
-heptype=35
+heptype=100
+localip=$(/sbin/ip -4 -o addr show dev eth0| awk '{split($4,a,"/");print a[1]}')
 
 # Specify NGCP Log file to monitor (ie: /var/log/ngcp/kamailio-lb.log) or all logs NGCP logs
 if ! [ $1 ]; then
@@ -46,7 +47,7 @@ if [ $all = 1 ] || [ -f $log ]; then
     tsu=$(date --date="$logdate" +%4N)
     #### timesec;timeusec;correlationid;source_ip;source_port;destination_ip;destinaton_port;payload in json
     #echo "${ts};${tsu};${callid};127.0.0.1;5060;10.0.0.1;5060;{\"log\": \"${line}\"}"
-    echo "${ts};${tsu};${callid};127.0.0.1;5060;10.0.0.1;5060;{\"log\": \"${line}\"}" | hepipe  -s $hepserver -p $heport -i $hepid -t $heptype 
+    echo "${ts};${tsu};${callid};${localip};514;${localip};514;{\"log\": \"${line}\"}" | hepipe  -s $hepserver -p $heport -i $hepid -t $heptype 
     fi
   done < <(tail -f $log)
 
