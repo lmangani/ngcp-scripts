@@ -27,7 +27,7 @@ killgroup()
 {
   echo
   echo "HEP Packets sent: ${sent}"
-  echo "HEP Packets fail: ${fail}"
+  echo "HEP Packets skip: ${fail}"
   echo "Exiting..."
   kill 0
 }
