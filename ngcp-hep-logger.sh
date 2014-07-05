@@ -22,6 +22,20 @@ script="tail -f"
 netcat="nc -k -l ${syslogport}"
 command=$script
 
+# Exit process
+killgroup()
+{
+  echo
+  echo "HEP Packets sent: ${sent}"
+  echo "HEP Packets fail: ${fail}"
+  echo "Exiting..."
+  kill 0
+}
+ 
+# trap keyboard interrupt (control-c)
+trap killgroup SIGINT
+
+
 # Usage
 usage() {
 	echo "Usage: $0 [-l </path/to/file.log>] [-a </path/to/logs>] [-x <string>]"
