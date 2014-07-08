@@ -18,7 +18,7 @@ skip="*127.0.0.1"
 skipline="*udp:127.0.0.1:5060*"
 
 # script execution vars
-script="tail -f"
+script="tail -f -n 0 -q"
 netcat="nc -k -l ${syslogport}"
 command=$script
 
