@@ -65,3 +65,6 @@ syslog:
 ```
 ngrep -W byline port 5514
 ```
+
+##Kibana configuration
+Import the barebone Kibana dashboard from this repository and begin building your dashboards and filters
