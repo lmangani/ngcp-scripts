@@ -1,5 +1,5 @@
 ##SIP:WISE NGCP/SPCE + ELK
-The following snippets will allow you to ship your sip:wise CE/PRO logs to a remote Elasticsearch-Logstash-Kibana stack for fun and profit. 
+The following snippets are meant to help newcomers ship their sip:wise CE/PRO logs to a remote Elasticsearch-Logstash-Kibana stack for fun and profit. 
 
 
 ##Logstash configuration
