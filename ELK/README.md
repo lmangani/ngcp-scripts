@@ -12,16 +12,16 @@ The proposed filter parses the standard syslog format as well as the CALL-ID (ID
 input {
   udp {
     port => 5514
-    type => "ngcp"
+    type => "syslog"
   }
   tcp {
     port => 5514
-    type => "ngcp"
+    type => "syslog"
   }
 }
 
 filter {
-  if [type] == "ngcp" {
+  if [type] == "syslog" {
     grok {
       match => { "message" => "^(?:<%{POSINT:syslog_pri}>)?%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}"}
       add_field => [ "received_at", "%{@timestamp}" ]
@@ -38,7 +38,7 @@ filter {
 }
 
 output {
-  if [type] == "ngcp" {
+  if [type] == "syslog" {
     elasticsearch {
     host => "127.0.0.1"
     }
