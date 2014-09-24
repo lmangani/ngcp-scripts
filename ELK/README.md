@@ -73,4 +73,5 @@ ngrep -W byline port 5514
 
 ##Kibana configuration
 Import the barebone Kibana dashboard from this repository and begin building your dashboards and filters
-For a quick test import gist: https://gist.github.com/anonymous/20ec4fae970f34abaa22
+
+For a quick test you can also import gist: https://gist.github.com/anonymous/20ec4fae970f34abaa22
