@@ -1,3 +1,4 @@
+![](https://www.sipwise.com/wp-content/uploads/2011/01/sipwise_logo_150x79_on_white.png)
 ##SIP:WISE NGCP/SPCE + ELK
 The following snippets are meant to help newcomers ship their sip:wise CE/PRO logs to a remote Elasticsearch-Logstash-Kibana stack for fun and profit. 
 
@@ -10,6 +11,10 @@ The proposed filter parses the standard syslog format as well as the CALL-ID (ID
 ```
 input {
   udp {
+    port => 5514
+    type => "ngcp"
+  }
+  tcp {
     port => 5514
     type => "ngcp"
   }
