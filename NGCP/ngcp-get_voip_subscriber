@@ -46,7 +46,7 @@ sub main {
     # sort hash keys, so parameters always have the same order
     $Data::Dumper::Sortkeys = 1;
 
-    print "VoIP account information:\n", Dumper $return;
+    print "VoIP subscriber information:\n", Dumper $return;
 
     exit;
 }
