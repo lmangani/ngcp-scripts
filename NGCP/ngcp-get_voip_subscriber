@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+use strict;
+
+use Data::Dumper;
+use Getopt::Std;
+use Sipwise::Provisioning::Billing;
+use Sipwise::Provisioning::Voip;
+use Sipwise::Provisioning::Config;
+
+my %CONFIG = (admin => 'cmd');
+
+my $config = Sipwise::Provisioning::Config->new()->get_config();
+
+unless ($CONFIG{password} = $config->{acl}->{$CONFIG{admin}}->{password}) {
+  die "Error: No provisioning password found for user $CONFIG{admin}\n";
+}
+
+sub main;
+sub usage;
+sub call_prov;
+
+my %opts;
+getopts('i:u:d:', \%opts);
+
+die usage() unless (defined $opts{i} and !defined $opts{u} and !defined $opts{d})
+                or (defined $opts{u} and defined $opts{d} and !defined $opts{i});
+
+## my $bprov = Sipwise::Provisioning::Billing->new();
+my $bprov = Sipwise::Provisioning::Voip->new();
+
+main;
+
+sub main {
+    my $return = defined $opts{i}
+                 ? call_prov('get_subscriber_by_id', { subscriber_id => $opts{i} })
+                 : call_prov('get_subscriber', {
+                                                                 username => $opts{u},
+                                                                 domain   => $opts{d},
+								'filter' => {'terminated' => 1},
+                                                               });
+
+    # use no indentation/linebreaks, for syslog logging
+    $Data::Dumper::Indent = 1;
+    # don't print useless variable names
+    $Data::Dumper::Terse = 1;
+    # sort hash keys, so parameters always have the same order
+    $Data::Dumper::Sortkeys = 1;
+
+    print "VoIP account information:\n", Dumper $return;
+
+    exit;
+}
+
+
+sub call_prov {
+    #   scalar,    scalar,    hash-ref
+    my ($function, $parameter) = @_;
+    my $result;
+
+    eval {
+        $result = $bprov->handle_request( $function,
+                                          {
+                                            authentication => {
+                                                                type     => 'system',
+                                                                username => $CONFIG{admin},
+                                                                password => $CONFIG{password},
+                                                              },
+                                            parameters => $parameter,
+                                        });
+    };
+
+    if($@) {
+        if(ref $@ eq 'SOAP::Fault') {
+            die "Billing\::$function failed: ". $@->faultstring;
+        } else {
+            die "Billing\::$function failed: $@";
+        }
+    }
+
+    return $result;
+}
+
+sub usage {
+    die "Usage:\n  $0 -i <account_id>\nor:\n  $0 -u <subscriber> -d <domain>\n".
+        "\ne.g.: $0 -u testuser -d sip.sipwise.com\n\n".
+        "Options:\n".
+        "  -i <account_id> the numeric ID of the account\n".
+        "  -u <username>   the local-part of one subscriber's SIP URI\n".
+        "  -d <domain>     the domain-part of one subscriber's SIP URI\n";
+}
